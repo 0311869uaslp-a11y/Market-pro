@@ -4,27 +4,27 @@ const sendToken = require('../utils/sendToken');
 const ErrorHandler = require('../utils/errorHandler');
 const sendEmail = require('../utils/sendEmail');
 const crypto = require('crypto');
-const cloudinary = require('cloudinary');
 
 // Register User
 exports.registerUser = asyncErrorHandler(async (req, res, next) => {
+    console.log("Register request received:", req.body); // Para debugging
 
-    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-        folder: "avatars",
-        width: 150,
-        crop: "scale",
-    });
+    const { name, email, password } = req.body;
 
-    const { name, email, gender, password } = req.body;
+    // Validación básica
+    if (!name || !email || !password) {
+        return next(new ErrorHandler("Please provide name, email and password", 400));
+    }
 
+    // Crear usuario con avatar por defecto
     const user = await User.create({
         name, 
         email,
-        gender,
         password,
+        gender: req.body.gender || "not specified",
         avatar: {
-            public_id: myCloud.public_id,
-            url: myCloud.secure_url,
+            public_id: "default_avatar_id",
+            url: "https://cdn-icons-png.flaticon.com/512/149/149071.png" // Avatar por defecto
         },
     });
 
@@ -39,7 +39,7 @@ exports.loginUser = asyncErrorHandler(async (req, res, next) => {
         return next(new ErrorHandler("Please Enter Email And Password", 400));
     }
 
-    const user = await User.findOne({ email}).select("+password");
+    const user = await User.findOne({ email }).select("+password");
 
     if(!user) {
         return next(new ErrorHandler("Invalid Email or Password", 401));
@@ -51,7 +51,7 @@ exports.loginUser = asyncErrorHandler(async (req, res, next) => {
         return next(new ErrorHandler("Invalid Email or Password", 401));
     }
 
-    sendToken(user, 201, res);
+    sendToken(user, 200, res); // Cambiado de 201 a 200 para login
 });
 
 // Logout User
@@ -91,18 +91,15 @@ exports.forgotPassword = asyncErrorHandler(async (req, res, next) => {
 
     await user.save({ validateBeforeSave: false });
 
-    // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/password/reset/${resetToken}`;
-    const resetPasswordUrl = `https://${req.get("host")}/password/reset/${resetToken}`;
+    const resetPasswordUrl = `${req.protocol}://${req.get("host")}/password/reset/${resetToken}`;
 
-    // const message = `Your password reset token is : \n\n ${resetPasswordUrl}`;
+    const message = `Your password reset token is : \n\n ${resetPasswordUrl} \n\n If you didn't request this, please ignore this email.`;
 
     try {
         await sendEmail({
             email: user.email,
-            templateId: process.env.SENDGRID_RESET_TEMPLATEID,
-            data: {
-                reset_url: resetPasswordUrl
-            }
+            subject: "Flipkart Password Recovery",
+            message,
         });
 
         res.status(200).json({
@@ -115,7 +112,7 @@ exports.forgotPassword = asyncErrorHandler(async (req, res, next) => {
         user.resetPasswordExpire = undefined;
 
         await user.save({ validateBeforeSave: false });
-        return next(new ErrorHandler(error.message, 500))
+        return next(new ErrorHandler(error.message, 500));
     }
 });
 
@@ -155,7 +152,7 @@ exports.updatePassword = asyncErrorHandler(async (req, res, next) => {
 
     user.password = req.body.newPassword;
     await user.save();
-    sendToken(user, 201, res);
+    sendToken(user, 200, res);
 });
 
 // Update User Profile
@@ -166,29 +163,20 @@ exports.updateProfile = asyncErrorHandler(async (req, res, next) => {
         email: req.body.email,
     }
 
-    if(req.body.avatar !== "") {
-        const user = await User.findById(req.user.id);
-
-        const imageId = user.avatar.public_id;
-
-        await cloudinary.v2.uploader.destroy(imageId);
-
-        const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-            folder: "avatars",
-            width: 150,
-            crop: "scale",
-        });
-
+    // Si el frontend envía avatar como base64, puedes manejarlo aquí
+    // pero como quitamos Cloudinary, solo actualizamos nombre y email
+    if (req.body.avatar && req.body.avatar !== "") {
+        // Si quieres guardar el avatar como URL directa sin Cloudinary
         newUserData.avatar = {
-            public_id: myCloud.public_id,
-            url: myCloud.secure_url,
-        }
+            public_id: "user_uploaded",
+            url: req.body.avatar // URL directa o base64
+        };
     }
 
     await User.findByIdAndUpdate(req.user.id, newUserData, {
         new: true,
         runValidators: true,
-        useFindAndModify: true,
+        useFindAndModify: false,
     });
 
     res.status(200).json({
@@ -230,8 +218,8 @@ exports.updateUserRole = asyncErrorHandler(async (req, res, next) => {
     const newUserData = {
         name: req.body.name,
         email: req.body.email,
-        gender: req.body.gender,
-        role: req.body.role,
+        gender: req.body.gender || "not specified",
+        role: req.body.role || "user",
     }
 
     await User.findByIdAndUpdate(req.params.id, newUserData, {
@@ -245,7 +233,7 @@ exports.updateUserRole = asyncErrorHandler(async (req, res, next) => {
     });
 });
 
-// Delete Role --ADMIN
+// Delete User --ADMIN
 exports.deleteUser = asyncErrorHandler(async (req, res, next) => {
 
     const user = await User.findById(req.params.id);
@@ -254,9 +242,10 @@ exports.deleteUser = asyncErrorHandler(async (req, res, next) => {
         return next(new ErrorHandler(`User doesn't exist with id: ${req.params.id}`, 404));
     }
 
-    await user.remove();
+    await user.deleteOne(); // Cambiado de remove() a deleteOne()
 
     res.status(200).json({
-        success: true
+        success: true,
+        message: "User deleted successfully"
     });
 });
