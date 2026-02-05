@@ -2,8 +2,8 @@ const path = require('path');
 const express = require('express');
 const cloudinary = require('cloudinary');
 const cors = require('cors'); // Importar cors
-const app = require('./backend/app');
-const connectDatabase = require('./backend/config/database');
+const app = require('./app');
+const connectDatabase = require('./config/database');
 const PORT = process.env.PORT || 4000;
 
 // UncaughtException Error
