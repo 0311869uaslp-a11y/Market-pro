@@ -146,8 +146,8 @@ exports.createProduct = asyncErrorHandler(async (req, res, next) => {
     const product = await Product.create({
         name: req.body.name,
         description: req.body.description,
-        price: price,
-        cuttedPrice: cuttedPrice, // <-- CAMPO REQUERIDO AÑADIDO
+        price: Number(req.body.price),
+        cuttedPrice: Number(req.body.cuttedPrice) || Math.round(Number(req.body.price) * 0.8 * 100) / 100,
         category: req.body.category,
         stock: Number(req.body.stock),
         images: imagesLink,
