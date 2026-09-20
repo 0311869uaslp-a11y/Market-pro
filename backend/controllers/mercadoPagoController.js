@@ -36,7 +36,7 @@ exports.createPreference = asyncErrorHandler(async (req, res, next) => {
                 failure: `${process.env.FRONTEND_URL}/orders/failed`,
                 pending: `${process.env.FRONTEND_URL}/orders/pending`,
             },
-            auto_return: 'approved',
+           // auto_return: 'approved',
             // ¡CLAVE! Guardamos el orderId real para actualizarlo en el webhook
             external_reference: orderId,
             notification_url: `${process.env.BACKEND_URL}/api/v1/mp/webhook`,
