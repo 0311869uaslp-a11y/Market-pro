@@ -20,6 +20,8 @@ const user = require('./routes/userRoute');
 const product = require('./routes/productRoute');
 const order = require('./routes/orderRoute');
 const payment = require('./routes/paymentRoute');
+const mercadoPagoRoutes = require('./routes/mercadoPagoRoute');
+app.use('/api/v1', mercadoPagoRoutes);
 
 app.use('/api/v1', user);
 app.use('/api/v1', product);
