@@ -14,7 +14,8 @@ exports.newOrder = asyncErrorHandler(async (req, res, next) => {
         totalPrice,
     } = req.body;
 
-    const orderExist = await Order.findOne({ paymentInfo });
+    // ✅ Buscar solo por el id del pago
+    const orderExist = await Order.findOne({ "paymentInfo.id": req.body.paymentInfo?.id });
 
     if (orderExist) {
         return next(new ErrorHandler("Order Already Placed", 400));
@@ -29,17 +30,22 @@ exports.newOrder = asyncErrorHandler(async (req, res, next) => {
         user: req.user._id,
     });
 
-    await sendEmail({
-        email: req.user.email,
-        templateId: process.env.SENDGRID_ORDER_TEMPLATEID,
-        data: {
-            name: req.user.name,
-            shippingInfo,
-            orderItems,
-            totalPrice,
-            oid: order._id,
-        }
-    });
+    // ✅ Intentar enviar email, pero no romper la orden si falla
+    try {
+        await sendEmail({
+            email: req.user.email,
+            templateId: process.env.SENDGRID_ORDER_TEMPLATEID,
+            data: {
+                name: req.user.name,
+                shippingInfo,
+                orderItems,
+                totalPrice,
+                oid: order._id,
+            }
+        });
+    } catch (emailError) {
+        console.error("Error sending order email:", emailError);
+    }
 
     res.status(201).json({
         success: true,
