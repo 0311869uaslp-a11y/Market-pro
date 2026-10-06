@@ -38,7 +38,7 @@ exports.createPreference = asyncErrorHandler(async (req, res, next) => {
         pending: "http://localhost:3001/orders/pending",
     },
 
-    auto_return: "approved",
+   // auto_return: "approved",
 
     external_reference: orderId,
 
