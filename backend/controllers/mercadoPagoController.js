@@ -30,22 +30,28 @@ exports.createPreference = asyncErrorHandler(async (req, res, next) => {
         const preference = new Preference(client);
 
         const body = {
-            items: items,
-            back_urls: {
-                success: `${process.env.FRONTEND_URL}/orders/success`,
-                failure: `${process.env.FRONTEND_URL}/orders/failed`,
-                pending: `${process.env.FRONTEND_URL}/orders/pending`,
-            },
-            auto_return: 'approved',
-            // ¡CLAVE! Guardamos el orderId real para actualizarlo en el webhook
-            external_reference: orderId,
-            notification_url: `${process.env.BACKEND_URL}/api/v1/mp/webhook`,
-            payer: {
-                name: req.user.name,
-                email: req.user.email,
-            },
-            statement_descriptor: 'NEXORA',
-        };
+    items,
+
+    back_urls: {
+        success: "http://localhost:3001/orders/success",
+        failure: "http://localhost:3001/orders/failed",
+        pending: "http://localhost:3001/orders/pending",
+    },
+
+    auto_return: "approved",
+
+    external_reference: orderId,
+
+    notification_url:
+        "https://flipkart-backend-fcmy.onrender.com/api/v1/mp/webhook",
+
+    payer: {
+        name: req.user.name,
+        email: req.user.email,
+    },
+
+    statement_descriptor: "NEXORA",
+};
 
         const result = await preference.create({ body });
 
