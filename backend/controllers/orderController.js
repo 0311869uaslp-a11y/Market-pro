@@ -31,21 +31,24 @@ exports.newOrder = asyncErrorHandler(async (req, res, next) => {
     });
 
     // ✅ Intentar enviar email, pero no romper la orden si falla
-    try {
-        await sendEmail({
-            email: req.user.email,
-            templateId: process.env.SENDGRID_ORDER_TEMPLATEID,
-            data: {
-                name: req.user.name,
-                shippingInfo,
-                orderItems,
-                totalPrice,
-                oid: order._id,
-            }
-        });
-    } catch (emailError) {
-        console.error("Error sending order email:", emailError);
-    }
+ try {
+    await sendEmail({
+        email: req.user.email,
+        templateId: process.env.SENDGRID_ORDER_TEMPLATEID,
+        data: {
+            name: req.user.name,
+            shippingInfo,
+            orderItems,
+            totalPrice,
+            oid: order._id,
+        }
+    });
+} catch (emailError) {
+    console.error(
+        "NEXORA: order created, but confirmation email failed:",
+        emailError.message
+    );
+}
 
     res.status(201).json({
         success: true,
