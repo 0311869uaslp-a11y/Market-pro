@@ -9,7 +9,7 @@ exports.processPayment = asyncErrorHandler(async (req, res, next) => {
     try {
         const paymentIntent = await stripe.paymentIntents.create({
             amount: req.body.amount, // En centavos
-            currency: "inr",
+            currency: "mxn",
             metadata: {
                 customer_email: req.body.email,
                 phone: req.body.phoneNo || "",
