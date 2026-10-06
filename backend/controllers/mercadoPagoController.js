@@ -44,7 +44,7 @@ exports.createPreference = asyncErrorHandler(async (req, res, next) => {
                 name: req.user.name,
                 email: req.user.email,
             },
-            statement_descriptor: 'FLIPKART',
+            statement_descriptor: 'NEXORA',
         };
 
         const result = await preference.create({ body });
